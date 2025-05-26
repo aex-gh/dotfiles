@@ -1,0 +1,38 @@
+# vi: set ft=yaml :
+# Variables that apply to ALL inventory groups (local and remote)
+
+#
+# XDG Base Directory Specification (Global Defaults)
+#
+
+# These are fallback defaults - individual groups can override
+xdg_config_home: "{{ ansible_env.XDG_CONFIG_HOME | default(ansible_env.HOME + '/.config') }}"
+xdg_data_home: "{{ ansible_env.XDG_DATA_HOME | default(ansible_env.HOME + '/.local/share') }}"
+xdg_cache_home: "{{ ansible_env.XDG_CACHE_HOME | default(ansible_env.HOME + '/.cache') }}"
+xdg_state_home: "{{ ansible_env.XDG_STATE_HOME | default(ansible_env.HOME + '/.local/state') }}"
+
+#
+# Common Directories
+#
+
+dotfiles_user_home: "{{ ansible_env.HOME }}"
+dotfiles_home: "{{ dotfiles_user_home }}/dotfiles"
+
+#
+# Default Feature Flags
+#
+
+# These can be overridden in group-specific files
+package_update: yes
+package_upgrade: no
+gui_environment: false
+
+#
+# Platform Detection
+#
+
+is_macos: "{{ ansible_os_family == 'Darwin' }}"
+is_linux: "{{ ansible_system == 'Linux' }}"
+is_debian: "{{ ansible_os_family == 'Debian' }}"
+is_arch: "{{ ansible_os_family == 'Archlinux' }}"
+is_remote: "{{ inventory_hostname != 'localhost' }}"
