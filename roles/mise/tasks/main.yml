@@ -1,0 +1,22 @@
+- name: Install mise with homebrew
+  homebrew: name=mise state=present
+  when: ansible_os_family == "Darwin"
+
+- name: Install mise with script (Linux)
+  shell: |
+    curl https://mise.run | sh
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+  args:
+    creates: "{{ ansible_env.HOME }}/.local/bin/mise"
+  when: ansible_os_family != "Darwin"
+
+- name: Create mise config directory
+  file:
+    path: "{{ '~/.config/mise' | expanduser }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy mise config file
+  copy:
+    src: "{{ dotfiles_home }}/roles/mise/files/config.toml"
+    dest: "{{ '~/.config/mise/config.toml' | expanduser }}"
