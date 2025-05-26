@@ -1,13 +1,21 @@
 ---
 - name: Update package cache (Fedora)
-  dnf:
-    update_cache: yes
-  become: yes
+  ansible.builtin.dnf:
+    update_cache: true
+  become: true
   when: package_update | default(true)
 
 - name: Upgrade packages (Fedora)
-  dnf:
-    name: "*"
+  ansible.builtin.dnf:
+    name: "*" # package-latest warning
     state: latest
-  become: yes
+  become: true
   when: package_upgrade | default(false)
+
+- name: Install common packages for Fedora
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dev_packages.Fedora.values() | list }}"
+  when: item is not none and item != 'null'
+  become: true

@@ -1,15 +1,6 @@
 ---
-- name: Install development tools (Fedora)
-  dnf:
-    name:
-      - git
-      - vim
-      - zsh
-      - "@Development Tools"
-      - ripgrep
-      - fd-find
-      - bat
-      - eza
-      - fzf
+- name: Install development tools (Fedora) # No packages left after removing overlap
+  ansible.builtin.dnf:
+    name: []
     state: present
-  become: yes
+  become: true

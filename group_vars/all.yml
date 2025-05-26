@@ -5,7 +5,6 @@ supported_platforms:
   primary:
     - Darwin      # macOS - Premium development experience
     - Ubuntu      # Most popular Linux desktop distro
-  
   secondary:
     - Debian      # Ubuntu's stable foundation
     - Fedora      # Red Hat's desktop/development platform
@@ -31,7 +30,6 @@ dev_packages:
     bat: bat
     eza: eza
     fzf: fzf
-    
   Ubuntu:
     package_manager: apt
     git: git
@@ -43,7 +41,6 @@ dev_packages:
     eza: null  # Need special install
     fzf: fzf
     build_tools: build-essential
-    
   Debian:
     package_manager: apt
     git: git
@@ -55,7 +52,6 @@ dev_packages:
     eza: null  # Need special install
     fzf: fzf
     build_tools: build-essential
-    
   Fedora:
     package_manager: dnf
     git: git
@@ -67,7 +63,6 @@ dev_packages:
     eza: eza  # Available in Fedora repos
     fzf: fzf
     build_tools: "@Development Tools"
-    
   Archlinux:
     package_manager: pacman
     git: git
@@ -90,12 +85,10 @@ special_installs:
         wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
         echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
         sudo apt update && sudo apt install eza
-        
     Debian:
       method: cargo
       reason: "Not in standard repos"
       install_cmd: "cargo install eza"
-      
   mise:
     Ubuntu: "curl https://mise.run | sh"
     Debian: "curl https://mise.run | sh"
@@ -110,3 +103,36 @@ xdg_compliance:
   data_home: "${XDG_DATA_HOME:-$HOME/.local/share}"
   cache_home: "${XDG_CACHE_HOME:-$HOME/.cache}"
   state_home: "${XDG_STATE_HOME:-$HOME/.local/state}"
+
+# Font package definitions
+font_packages:
+  hack:
+    Darwin: font-hack
+    Ubuntu: fonts-hack
+    Debian: fonts-hack
+    Fedora: hack-fonts
+    Archlinux: ttf-hack
+  fira_code:
+    Darwin: font-fira-code
+    Ubuntu: fonts-firacode
+    Debian: fonts-firacode
+    Fedora: fira-code-fonts
+    Archlinux: ttf-fira-code
+  jetbrains_mono:
+    Darwin: font-jetbrains-mono
+    Ubuntu: fonts-jetbrains-mono
+    Debian: fonts-jetbrains-mono
+    Fedora: jetbrains-mono-fonts
+    Archlinux: ttf-jetbrains-mono
+  noto_generic: # For general Noto fonts (excluding emoji)
+    Darwin: null # Typically handled by system or other Noto packages on macOS
+    Ubuntu: fonts-noto
+    Debian: fonts-noto
+    Archlinux: noto-fonts
+    Fedora: google-noto-fonts
+  noto_emoji:
+    Darwin: null # Emoji fonts are generally well-supported system-wide on macOS
+    Ubuntu: fonts-noto-color-emoji
+    Debian: fonts-noto-color-emoji
+    Archlinux: noto-fonts-emoji
+    Fedora: google-noto-emoji-color-fonts

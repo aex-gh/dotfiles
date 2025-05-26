@@ -1,27 +1,14 @@
 ---
-- name: Install development tools (Debian)
-  apt:
-    name:
-      - git
-      - vim
-      - zsh
-      - build-essential
-      - curl
-      - wget
-      - ripgrep
-      - fd-find
-      - bat
-      - fzf
+- name: Install development tools (Debian) # No packages left after removing overlap
+  ansible.builtin.apt:
+    name: []
     state: present
-  become: yes
-  ignore_errors: yes
+  become: true
+  # ignore_errors: true # Removed
 
 - name: Install rust for cargo installations
-  shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  ansible.builtin.shell: "set -o pipefail && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y" # risky-shell-pipe addressed, command-instead-of-module may persist
   args:
-    creates: "{{ ansible_env.HOME }}/.cargo/bin/cargo"
-
-- name: Install eza via cargo (Debian)
-  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo install eza"
-  args:
-    creates: "{{ ansible_env.HOME }}/.cargo/bin/eza"
+    creates: "{{ xdg_data_home }}/cargo/bin/cargo"
+  changed_when: false
+# eza installation for Debian is now handled in special_installs.yml

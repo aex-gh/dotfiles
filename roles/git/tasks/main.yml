@@ -1,0 +1,54 @@
+---
+# tasks file for roles/git
+# Ensures Git global configuration is XDG compliant.
+
+- name: Ensure XDG git config directory exists
+  ansible.builtin.file:
+    path: "{{ xdg_config_home }}/git" # Using variable from group_vars
+    state: directory
+    mode: '0755'
+
+- name: Check if actual gitconfig file exists in XDG location
+  ansible.builtin.stat:
+    path: "{{ xdg_config_home }}/git/config"
+  register: xdg_git_config_stat
+
+- name: "Ensure actual git config is at XDG path (Placeholder)" # name[template]
+  ansible.builtin.debug:
+    msg: |
+      This role expects your actual git configuration file (with user name, email, aliases, etc.)
+      to be located at '{{ xdg_config_home }}/git/config'.
+      You might symlink it from your dotfiles repository into that location.
+      For example: ln -s /path/to/your/dotfiles/git/config {{ xdg_config_home }}/git/config
+  when: not xdg_git_config_stat.stat.exists
+
+- name: Check if legacy ~/.gitconfig exists
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.gitconfig"
+  register: legacy_gitconfig_stat
+
+- name: Back up legacy ~/.gitconfig if it exists and is not already a symlink to XDG path
+  ansible.builtin.command:
+    cmd: "mv {{ ansible_env.HOME }}/.gitconfig {{ ansible_env.HOME }}/.gitconfig.bak"
+  args:
+    creates: "{{ ansible_env.HOME }}/.gitconfig.bak"
+  when:
+    - legacy_gitconfig_stat.stat.exists
+    - not (legacy_gitconfig_stat.stat.islnk and legacy_gitconfig_stat.stat.link_path == (xdg_config_home + '/git/config'))
+
+- name: Symlink ~/.gitconfig to XDG location
+  ansible.builtin.file:
+    src: "{{ xdg_config_home }}/git/config"
+    dest: "{{ ansible_env.HOME }}/.gitconfig"
+    state: link
+    force: true # Force to overwrite if it's a broken symlink or a different file after backup
+  when: xdg_git_config_stat.stat.exists # Only create symlink if the target XDG config actually exists
+
+- name: Inform user if XDG git config doesn't exist and symlink not made
+  ansible.builtin.debug:
+    msg: "Symlink from ~/.gitconfig to {{ xdg_config_home }}/git/config was NOT created (target missing)." # Shortened for line-length
+  when: > # Folding for readability due to long condition
+    not xdg_git_config_stat.stat.exists and
+    not (legacy_gitconfig_stat.stat.exists and
+         legacy_gitconfig_stat.stat.islnk and
+         legacy_gitconfig_stat.stat.link_path == (xdg_config_home + '/git/config'))

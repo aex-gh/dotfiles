@@ -1,5 +1,5 @@
 - name: Download lctl to ~/.local/bin/lctl
-  get_url:
+  ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/newtonne/lctl/refs/heads/master/lctl.sh
-    dest: "{{ dotfiles_user_home }}/.local/bin/lctl"
+    dest: "{{ dotfiles_user_home }}/.local/bin/lctl" # Consider XDG_BIN_HOME
     mode: "0755"

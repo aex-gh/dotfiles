@@ -1,15 +1,14 @@
 ---
-- name: Install fonts via pacman
-  pacman:
-    name:
-      - ttf-hack
-      - ttf-fira-code
-      - ttf-jetbrains-mono
-      - noto-fonts
-      - noto-fonts-emoji
+- name: Install fonts via pacman (Arch)
+  ansible.builtin.pacman: # Using ansible.builtin.pacman as per previous linting fix
+    name: "{{ item.value.Archlinux }}"
     state: present
-  become: yes
+  loop: "{{ font_packages | dict2items }}"
+  when: item.value.Archlinux is defined and item.value.Archlinux is not none
+  become: true
 
 - name: Update font cache
-  shell: fc-cache -fv
-  become: yes
+  ansible.builtin.command: fc-cache -fv
+  become: true
+  changed_when: false
+  check_mode: false

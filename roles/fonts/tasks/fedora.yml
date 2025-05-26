@@ -1,21 +1,14 @@
 ---
 - name: Install font packages (Fedora)
-  dnf:
-    name:
-      - google-noto-fonts
-      - google-noto-emoji-color-fonts
-      - jetbrains-mono-fonts
-      - fira-code-fonts
+  ansible.builtin.dnf:
+    name: "{{ item.value.Fedora }}"
     state: present
-  become: yes
-
-- name: Install Hack font (Fedora)
-  dnf:
-    name: hack-fonts
-    state: present
-  become: yes
-  ignore_errors: yes
+  loop: "{{ font_packages | dict2items }}"
+  when: item.value.Fedora is defined and item.value.Fedora is not none
+  become: true
 
 - name: Update font cache
-  shell: fc-cache -fv
-  become: yes
+  ansible.builtin.command: fc-cache -fv
+  become: true
+  changed_when: false
+  check_mode: false

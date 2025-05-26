@@ -1,15 +1,24 @@
 ---
 - name: Update package cache (Ubuntu)
-  apt:
-    update_cache: yes
+  ansible.builtin.apt:
+    update_cache: true
     cache_valid_time: 3600
-  become: yes
+  become: true
   when: package_update | default(true)
 
 - name: Upgrade packages (Ubuntu)
-  apt:
+  ansible.builtin.apt:
     upgrade: dist
-    autoremove: yes
-    autoclean: yes
-  become: yes
+    autoremove: true
+    autoclean: true
+  become: true
   when: package_upgrade | default(false)
+
+- name: Install common packages for Ubuntu
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true # Run update_cache before installing
+  loop: "{{ dev_packages.Ubuntu.values() | list }}"
+  when: item is not none and item != 'null'
+  become: true

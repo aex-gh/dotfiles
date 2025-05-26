@@ -1,10 +1,18 @@
 ---
 - name: Update homebrew
-  homebrew: 
-    update_homebrew: yes
+  community.general.homebrew:
+    update_homebrew: true
   when: package_update | default(true)
 
 - name: Upgrade homebrew packages
-  homebrew: 
-    upgrade_all: yes
+  community.general.homebrew:
+    upgrade_all: true
   when: package_upgrade | default(false)
+
+- name: Install common packages for Darwin
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dev_packages.Darwin.values() | list }}"
+  when: item is not none and item != 'null'
+  # No become: yes needed for homebrew generally

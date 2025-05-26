@@ -1,8 +1,7 @@
 ---
-- name: Install fonts via homebrew cask
-  homebrew_cask:
-    name:
-      - font-hack
-      - font-fira-code
-      - font-jetbrains-mono
+- name: Install fonts via homebrew cask (macOS)
+  community.general.homebrew_cask: # Corrected FQCN
+    name: "{{ item.value.Darwin }}"
     state: present
+  loop: "{{ font_packages | dict2items }}"
+  when: item.value.Darwin is defined and item.value.Darwin is not none

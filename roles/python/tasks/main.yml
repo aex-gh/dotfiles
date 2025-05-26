@@ -1,2 +1,66 @@
-- import_tasks: mac.yml
+- name: Import macOS tasks for Python # name[missing]
+  ansible.builtin.import_tasks: mac.yml
   when: ansible_os_family == "Darwin"
+
+- name: Ensure XDG pip config directory exists
+  ansible.builtin.file:
+    path: "{{ xdg_config_home }}/pip" # Should be created by xdg role, but good to ensure
+    state: directory
+    mode: '0755'
+
+- name: Check if actual pip.conf file exists in XDG location
+  ansible.builtin.stat:
+    path: "{{ xdg_config_home }}/pip/pip.conf"
+  register: xdg_pip_config_stat
+
+- name: "Placeholder: pip.conf XDG path guidance"
+  ansible.builtin.debug:
+    msg: |
+      This role expects your pip configuration file (pip.conf)
+      to be located at '{{ xdg_config_home }}/pip/pip.conf'.
+      You might symlink it from your dotfiles repository into that location,
+      or manage it directly with Ansible.
+      The PIP_CONFIG_FILE environment variable has been set to point here.
+  when: not xdg_pip_config_stat.stat.exists
+
+# Example: Symlink pip.conf from dotfiles (user would need to create this file in their dotfiles)
+# This is commented out by default, users can enable and adapt if they manage pip.conf in dotfiles.
+# - name: Symlink pip.conf from dotfiles to XDG location
+#   ansible.builtin.file:
+#     src: "{{ dotfiles_home }}/python/pip.conf.link" # Example path in a dotfiles repo
+#     dest: "{{ xdg_config_home }}/pip/pip.conf"
+#     state: link
+#     force: yes
+#   when: manage_pip_conf_symlink | default(false) | bool # Add a var to control this
+
+# Example: Create a minimal pip.conf if one doesn't exist (another option)
+# - name: Create minimal pip.conf if none exists
+#   ansible.builtin.copy:
+#     content: |
+#       [global]
+#       # cache-dir = {{ xdg_cache_home }}/pip # Example: Make pip cache XDG compliant too
+#       # format = columns
+#     dest: "{{ xdg_config_home }}/pip/pip.conf"
+#     force: no # Don't overwrite if it exists (e.g., symlinked from dotfiles)
+#   when: not xdg_pip_config_stat.stat.exists
+
+- name: Ensure XDG python config directory for startup script exists
+  ansible.builtin.file:
+    path: "{{ xdg_config_home }}/python" # Should be created by xdg role, but good to ensure
+    state: directory
+    mode: '0755'
+
+- name: Check if PYTHONSTARTUP script exists in XDG location
+  ansible.builtin.stat:
+    path: "{{ xdg_config_home }}/python/startup.py"
+  register: xdg_python_startup_script_stat
+
+- name: "Guidance: PYTHONSTARTUP XDG path"
+  ansible.builtin.debug:
+    msg: |
+      The PYTHONSTARTUP environment variable is set by the 'xdg' role to point to:
+      '{{ xdg_config_home }}/python/startup.py'.
+      If you wish to use a Python startup script, ensure it is located (or symlinked) there.
+      For example, you could symlink it from your dotfiles:
+      ln -s /path/to/your/dotfiles/python/startup.py {{ xdg_config_home }}/python/startup.py
+  when: not xdg_python_startup_script_stat.stat.exists

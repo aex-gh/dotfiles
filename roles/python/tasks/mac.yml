@@ -1,2 +1,4 @@
-- name: Install uv
-  homebrew: name=uv state=present
+- name: Install uv via Homebrew
+  community.general.homebrew: # FQCN for homebrew
+    name: uv
+    state: present

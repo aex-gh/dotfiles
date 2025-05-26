@@ -1,20 +1,20 @@
 ---
 - name: Install font packages (Ubuntu)
-  apt:
-    name:
-      - fonts-hack
-      - fonts-firacode
-      - fonts-jetbrains-mono
-      - fonts-noto
-      - fonts-noto-color-emoji
+  ansible.builtin.apt:
+    name: "{{ item.value.Ubuntu }}"
     state: present
-  become: yes
+  loop: "{{ font_packages | dict2items }}"
+  when: item.value.Ubuntu is defined and item.value.Ubuntu is not none
+  become: true
 
 - name: Create local fonts directory
-  file:
-    path: "{{ ansible_env.HOME }}/.local/share/fonts"
+  ansible.builtin.file:
+    path: "{{ xdg_data_home }}/fonts"
     state: directory
     mode: '0755'
 
 - name: Update font cache
-  shell: fc-cache -fv
+  ansible.builtin.command: fc-cache -fv
+  become: false # Fonts installed to user's XDG directory
+  changed_when: false
+  check_mode: false

@@ -1,15 +1,6 @@
 ---
-- name: Install development tools (Arch)
-  pacman:
-    name:
-      - git
-      - vim
-      - zsh
-      - base-devel
-      - ripgrep
-      - fd
-      - bat
-      - eza
-      - fzf
+- name: Install development tools (Arch) # No packages left after removing overlap
+  ansible.builtin.pacman: # community.general.pacman if not builtin
+    name: []
     state: present
-  become: yes
+  become: true

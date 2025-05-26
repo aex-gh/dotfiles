@@ -1,12 +1,20 @@
 ---
 - name: Update package cache (Arch)
-  pacman:
-    update_cache: yes
-  become: yes
+  ansible.builtin.pacman: # community.general.pacman if not builtin
+    update_cache: true
+  become: true
   when: package_update | default(true)
 
-- name: Upgrade packages (Arch) 
-  pacman:
-    upgrade: yes
-  become: yes
+- name: Upgrade packages (Arch)
+  ansible.builtin.pacman: # community.general.pacman if not builtin
+    upgrade: true
+  become: true
   when: package_upgrade | default(false)
+
+- name: Install common packages for Archlinux
+  ansible.builtin.pacman: # community.general.pacman if not builtin
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dev_packages.Archlinux.values() | list }}"
+  when: item is not none and item != 'null'
+  become: true

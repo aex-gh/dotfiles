@@ -1,12 +1,5 @@
 ---
-- name: Install development tools (macOS)
-  homebrew:
-    name:
-      - git
-      - vim
-      - ripgrep
-      - fd
-      - bat
-      - eza
-      - fzf
+- name: Install development tools (macOS) # No packages left after removing overlap
+  community.general.homebrew: # Corrected FQCN
+    name: []
     state: present

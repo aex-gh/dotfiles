@@ -3,18 +3,80 @@
 - name: Install mise (cross-platform development tool version manager)
   block:
     - name: Install mise via homebrew (macOS)
-      homebrew:
+      community.general.homebrew:
         name: mise
         state: present
       when: ansible_os_family == "Darwin"
-      
     - name: Install mise via AUR (Arch)
-      shell: yay -S --noconfirm mise-bin
-      when: ansible_distribution == "Archlinux"
-      ignore_errors: yes
-      
-    - name: Install mise via script (Ubuntu/Debian/Fedora)
-      shell: curl https://mise.run | sh
+      ansible.builtin.shell: "yay -S --noconfirm mise-bin"
       args:
-        creates: "{{ ansible_env.HOME }}/.local/bin/mise"
+        creates: /usr/bin/mise # Assuming mise-bin installs mise here
+      when: ansible_distribution == "Archlinux"
+      # become: true # if yay needs sudo for final package install with pacman
+      # become_user: "{{ ansible_user_id }}" # if yay should be run as a non-root user
+    - name: Install mise via script (Ubuntu/Debian/Fedora)
+      ansible.builtin.shell: "set -o pipefail && curl https://mise.run | sh" # risky-shell-pipe addressed
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/bin/mise" # Reverted to standard user bin path
+      changed_when: false # Idempotency handled by creates
       when: ansible_distribution in ["Ubuntu", "Debian", "Fedora"]
+
+# Install eza (modern ls replacement)
+- name: Install eza (special handling)
+  block:
+    # Ubuntu: Manual GPG and apt repository method
+    - name: Install eza (Ubuntu - manual method)
+      when: ansible_distribution == "Ubuntu" and special_installs.eza.Ubuntu.method == "manual"
+      block:
+        - name: Create keyring directory for eza (Ubuntu)
+          ansible.builtin.file:
+            path: /etc/apt/keyrings
+            state: directory
+            mode: '0755'
+          become: true
+        - name: Add eza GPG key (Ubuntu)
+          ansible.builtin.get_url:
+            url: https://raw.githubusercontent.com/eza-community/eza/main/deb.asc
+            dest: /tmp/eza.asc
+            mode: '0644'
+          become: true
+        - name: Import eza GPG key (Ubuntu)
+          ansible.builtin.shell: gpg --dearmor < /tmp/eza.asc > /etc/apt/keyrings/gierens.gpg
+          become: true
+          args:
+            creates: /etc/apt/keyrings/gierens.gpg
+          changed_when: false
+        - name: Add eza repository (Ubuntu)
+          ansible.builtin.apt_repository:
+            repo: "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main"
+            state: present
+          become: true
+        - name: Install eza package (Ubuntu)
+          ansible.builtin.apt:
+            name: eza
+            state: present
+            update_cache: true
+          become: true
+    # Debian: Cargo install method
+    - name: Install eza (Debian - cargo method)
+      when: ansible_distribution == "Debian" and special_installs.eza.Debian.method == "cargo"
+      block:
+        - name: Ensure cargo is available for eza install (Debian)
+          ansible.builtin.fail:
+            msg: "Cargo is required to install eza on Debian via this method, but cargo is not installed (checked via '{{ xdg_data_home }}/cargo/bin/cargo')."
+          when: not ansible_check_mode and not (lookup('file', xdg_data_home + '/cargo/bin/cargo', errors='ignore') | length > 0) # Basic check; ideally a fact set by rust role
+        - name: Install eza via cargo (Debian)
+          community.general.cargo:
+            command: install
+            name: eza
+            executable: "{{ xdg_data_home }}/cargo/bin/cargo"
+          environment:
+            XDG_CONFIG_HOME: "{{ xdg_config_home }}"
+            XDG_DATA_HOME: "{{ xdg_data_home }}"
+            CARGO_HOME: "{{ xdg_data_home }}/cargo"
+          become: false
+          # Relying on module's idempotency, 'creates' arg is not directly available for community.general.cargo
+          # The module checks if the crate is already installed.
+  when: >
+    (ansible_distribution == "Ubuntu" and special_installs.eza.Ubuntu.method is defined) or
+    (ansible_distribution == "Debian" and special_installs.eza.Debian.method is defined)

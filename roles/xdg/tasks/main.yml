@@ -1,9 +1,10 @@
 ---
 # XDG Base Directory Specification compliance
 - name: Set XDG environment variables
-  blockinfile:
+  ansible.builtin.blockinfile: # FQCN
     path: "{{ ansible_env.HOME }}/.zshenv"
-    create: yes
+    create: true # Truthy
+    mode: '0644' # risky-file-permissions
     block: |
       # XDG Base Directory Specification
       export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -21,10 +22,15 @@
       export NODE_REPL_HISTORY="$XDG_DATA_HOME/node_repl_history"
       export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
       export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
+      export PIP_CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/pip/pip.conf"
+      export MISE_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/mise"
+      export MISE_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/mise"
+      export MISE_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mise"
+      export PYTHONSTARTUP="${XDG_CONFIG_HOME:-$HOME/.config}/python/startup.py"
     marker: "# {mark} ANSIBLE MANAGED XDG BLOCK"
 
 - name: Create XDG directory structure
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: '0755'
@@ -40,9 +46,11 @@
     - "{{ ansible_env.HOME }}/.config/git"
     - "{{ ansible_env.HOME }}/.config/npm"
     - "{{ ansible_env.HOME }}/.cache/less"
+    - "{{ xdg_config_home | default(ansible_env.HOME + '/.config') }}/docker"
+    - "{{ xdg_config_home | default(ansible_env.HOME + '/.config') }}/python" # Added python startup dir
 
 - name: Create vim autoload directory (XDG compliant)
-  file:
-    path: "{{ ansible_env.HOME }}/.config/vim/autoload"
+  ansible.builtin.file: # FQCN
+    path: "{{ xdg_data_home | default(ansible_env.HOME + '/.local/share') }}/vim/autoload" # Corrected path
     state: directory
     mode: '0755'
