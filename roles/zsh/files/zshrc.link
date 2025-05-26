@@ -1,0 +1,84 @@
+#!/usr/bin/env zsh
+
+# XDG Base Directory Specification compliance
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+
+# Set ZDOTDIR for zsh configuration
+export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+
+# Set zsh history file location (XDG compliance)
+export HISTFILE="$XDG_STATE_HOME/zsh/history"
+
+# Ensure history directory exists
+[[ ! -d "$(dirname "$HISTFILE")" ]] && mkdir -p "$(dirname "$HISTFILE")"
+
+# Initialize homebrew (Apple Silicon Mac)
+if [[ $(uname -m) == 'arm64' && -f /opt/homebrew/bin/brew ]]; then
+  eval $(/opt/homebrew/bin/brew shellenv)
+fi
+
+# Initialize homebrew (Intel Mac)
+if [[ $(uname -m) == 'x86_64' && -f /usr/local/bin/brew ]]; then
+  eval $(/usr/local/bin/brew shellenv)
+fi
+
+# Shortcut to dotfiles path
+export ZSH="$HOME/dotfiles"
+
+# All of our zsh files
+typeset -U config_files
+config_files=($ZSH/**/*.zsh)
+
+# Load the path files first
+for file in ${(M)config_files:#*/path.zsh}; do
+  [[ -r "$file" ]] && source "$file"
+done
+
+# Source Prezto
+if [[ -s "$ZDOTDIR/.zprezto/init.zsh" ]]; then
+  source "$ZDOTDIR/.zprezto/init.zsh"
+fi
+
+# Load everything but the path, completion, and final files
+for file in ${${${config_files:#*/path.zsh}:#*/completion.zsh}:#*/final.zsh}; do
+  [[ -r "$file" ]] && source "$file"
+done
+
+# Initialize autocomplete here, otherwise functions won't be loaded
+autoload -U compinit
+
+# XDG-compliant completion cache
+if [[ $XDG_CACHE_HOME/zsh/zcompdump(#qNmh+24) ]]; then
+  compinit -d "$XDG_CACHE_HOME/zsh/zcompdump"
+else
+  compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump"
+fi
+
+# Ensure completion cache directory exists
+[[ ! -d "$XDG_CACHE_HOME/zsh" ]] && mkdir -p "$XDG_CACHE_HOME/zsh"
+
+# Load every completion after autocomplete loads
+for file in ${(M)config_files:#*/completion.zsh}; do
+  [[ -r "$file" ]] && source "$file"
+done
+
+# Load final configuration files last
+for file in ${(M)config_files:#*/final.zsh}; do
+  [[ -r "$file" ]] && source "$file"
+done
+
+unset config_files
+
+# Use .localrc for SUPER SECRET CRAP that you don't
+# want in your public, versioned repo.
+if [[ -a ~/.localrc ]]; then
+  source ~/.localrc
+fi
+
+# XDG-compliant local config
+if [[ -a "$XDG_CONFIG_HOME/zsh/localrc" ]]; then
+  source "$XDG_CONFIG_HOME/zsh/localrc"
+fi

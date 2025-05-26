@@ -1,0 +1,8 @@
+---
+- name: Install fonts via homebrew cask
+  homebrew_cask:
+    name:
+      - font-hack
+      - font-fira-code
+      - font-jetbrains-mono
+    state: present

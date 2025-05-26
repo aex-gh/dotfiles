@@ -1,0 +1,21 @@
+---
+- name: Install font packages (Fedora)
+  dnf:
+    name:
+      - google-noto-fonts
+      - google-noto-emoji-color-fonts
+      - jetbrains-mono-fonts
+      - fira-code-fonts
+    state: present
+  become: yes
+
+- name: Install Hack font (Fedora)
+  dnf:
+    name: hack-fonts
+    state: present
+  become: yes
+  ignore_errors: yes
+
+- name: Update font cache
+  shell: fc-cache -fv
+  become: yes

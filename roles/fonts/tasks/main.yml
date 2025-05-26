@@ -1,0 +1,9 @@
+---
+# Cross-platform font installation
+- name: Include OS-specific font installation
+  include_tasks: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family == "Darwin"
+
+- name: Include distribution-specific font installation  
+  include_tasks: "{{ ansible_distribution | lower }}.yml"
+  when: ansible_distribution in (supported_platforms.primary + supported_platforms.secondary)

@@ -1,0 +1,28 @@
+---
+# Enhanced package manager detection and setup
+- name: Detect package manager and distribution
+  set_fact:
+    pkg_mgr: "{{ 'homebrew' if ansible_os_family == 'Darwin' 
+              else 'pacman' if ansible_distribution == 'Archlinux'
+              else 'dnf' if ansible_distribution == 'Fedora'
+              else 'apt' if ansible_distribution in ['Ubuntu', 'Debian']
+              else 'unknown' }}"
+
+- name: Check platform support
+  fail:
+    msg: |
+      Platform {{ ansible_distribution }} is not supported.
+      Supported: {{ (supported_platforms.primary + supported_platforms.secondary) | join(', ') }}
+  when: ansible_distribution not in (supported_platforms.primary + supported_platforms.secondary) and ansible_os_family not in (supported_platforms.primary + supported_platforms.secondary)
+
+- name: Include distribution-specific tasks
+  include_tasks: "{{ ansible_distribution | lower }}.yml"
+  when: ansible_distribution in (supported_platforms.primary + supported_platforms.secondary)
+
+- name: Include macOS tasks
+  include_tasks: darwin.yml
+  when: ansible_os_family == "Darwin"
+
+- name: Update package cache
+  include_tasks: update_cache.yml
+  when: pkg_mgr in ['apt', 'dnf', 'pacman']

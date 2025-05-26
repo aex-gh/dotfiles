@@ -1,0 +1,5 @@
+---
+# zsh role defaults
+zsh_prezto: true
+set_zsh_as_default: true
+dotfiles_repo_url: "https://github.com/{{ ansible_user_id }}/dotfiles.git"

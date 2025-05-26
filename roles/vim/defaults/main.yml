@@ -1,0 +1,3 @@
+---
+# vim role defaults
+vim_install_plugins: false

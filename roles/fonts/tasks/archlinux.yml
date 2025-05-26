@@ -1,0 +1,15 @@
+---
+- name: Install fonts via pacman
+  pacman:
+    name:
+      - ttf-hack
+      - ttf-fira-code
+      - ttf-jetbrains-mono
+      - noto-fonts
+      - noto-fonts-emoji
+    state: present
+  become: yes
+
+- name: Update font cache
+  shell: fc-cache -fv
+  become: yes

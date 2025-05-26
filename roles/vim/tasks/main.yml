@@ -1,0 +1,138 @@
+---
+# Vim installation and configuration with XDG compliance
+# Supports macOS, Ubuntu/Debian, and Arch Linux
+
+# Installation
+- name: Install vim with homebrew (macOS)
+  homebrew: 
+    name: vim 
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: Install exuberant-ctags for TagBar plugin (macOS)
+  homebrew: 
+    name: ctags-exuberant 
+    state: present
+  when: ansible_os_family == "Darwin"
+
+- name: Install vim with apt (Debian/Ubuntu)
+  apt: 
+    name: vim 
+    state: present
+  become: yes
+  become_user: root
+  when: ansible_os_family == "Debian"
+
+- name: Install exuberant-ctags for TagBar plugin (Debian/Ubuntu)
+  apt: 
+    name: exuberant-ctags 
+    state: present
+  become: yes
+  become_user: root
+  when: ansible_os_family == "Debian"
+
+- name: Install vim with pacman (Arch Linux)
+  pacman: 
+    name: vim 
+    state: present
+  become: yes
+  when: ansible_os_family == "Archlinux"
+
+- name: Install ctags for TagBar plugin (Arch Linux)
+  pacman: 
+    name: ctags 
+    state: present
+  become: yes
+  when: ansible_os_family == "Archlinux"
+
+# XDG directories setup
+- name: Ensure XDG config directory exists
+  file: 
+    path: "{{ xdg_config_home }}/vim"
+    state: directory
+    mode: '0755'
+
+- name: Ensure XDG data directory exists
+  file: 
+    path: "{{ xdg_data_home }}/vim"
+    state: directory
+    mode: '0755'
+
+- name: Ensure vim autoload directory exists (XDG)
+  file: 
+    path: "{{ xdg_data_home }}/vim/autoload"
+    state: directory
+    mode: '0755'
+
+- name: Ensure UltiSnips directory exists (XDG)
+  file: 
+    path: "{{ xdg_config_home }}/vim/UltiSnips"
+    state: directory
+    mode: '0755'
+
+# Plugin manager
+- name: Install vim-plug
+  get_url:
+    url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    dest: "{{ xdg_data_home }}/vim/autoload/plug.vim"
+    mode: '0644'
+
+# Snippets
+- name: Symlink all snippet files
+  file:
+    src: "{{ dotfiles_home }}/roles/vim/files/{{ item }}"
+    dest: "{{ xdg_config_home }}/vim/UltiSnips/{{ item }}"
+    state: link
+    force: yes
+  loop:
+    - "python.snippets"
+    - "rst.snippets" 
+    - "javascript.snippets"
+
+# Configuration
+- name: Check if vimrc exists in legacy location
+  stat: 
+    path: "{{ ansible_env.HOME }}/.vimrc"
+  register: legacy_vimrc_stat
+  failed_when: false
+
+- name: Check if vimrc exists in XDG location
+  stat: 
+    path: "{{ xdg_config_home }}/vim/vimrc"
+  register: xdg_vimrc_stat
+  failed_when: false
+
+- name: Backup legacy vimrc if it exists
+  command: mv "{{ ansible_env.HOME }}/.vimrc" "{{ ansible_env.HOME }}/.vimrc.bak"
+  args:
+    creates: "{{ ansible_env.HOME }}/.vimrc.bak"
+  when: legacy_vimrc_stat.stat.exists
+
+- name: Backup XDG vimrc if it exists and is not our symlink
+  command: mv "{{ xdg_config_home }}/vim/vimrc" "{{ xdg_config_home }}/vim/vimrc.bak"
+  args:
+    creates: "{{ xdg_config_home }}/vim/vimrc.bak"
+  when: 
+    - xdg_vimrc_stat.stat.exists
+    - not xdg_vimrc_stat.stat.islnk
+
+- name: Symlink vimrc to XDG config location
+  file:
+    src: "{{ dotfiles_home }}/roles/vim/files/vimrc"
+    dest: "{{ xdg_config_home }}/vim/vimrc"
+    state: link
+    force: yes
+
+# Create legacy symlink for backwards compatibility
+- name: Create legacy vimrc symlink pointing to XDG location
+  file:
+    src: "{{ xdg_config_home }}/vim/vimrc"
+    dest: "{{ ansible_env.HOME }}/.vimrc"
+    state: link
+    force: yes
+
+- name: Install vim plugins
+  command: vim +PlugInstall +qall
+  environment:
+    VIMINIT: "let $MYVIMRC = '{{ xdg_config_home }}/vim/vimrc' | source $MYVIMRC"
+  when: vim_install_plugins | default(false) | bool

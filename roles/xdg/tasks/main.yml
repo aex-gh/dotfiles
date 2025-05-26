@@ -1,0 +1,48 @@
+---
+# XDG Base Directory Specification compliance
+- name: Set XDG environment variables
+  blockinfile:
+    path: "{{ ansible_env.HOME }}/.zshenv"
+    create: yes
+    block: |
+      # XDG Base Directory Specification
+      export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+      export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+      export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+      export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+      
+      # Application-specific XDG compliance
+      export VIMINIT='let $MYVIMRC = !has("nvim") ? "$XDG_CONFIG_HOME/vim/vimrc" : "$XDG_CONFIG_HOME/nvim/init.lua" | so $MYVIMRC'
+      export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+      export HISTFILE="$XDG_STATE_HOME/zsh/history"
+      export LESSHISTFILE="$XDG_CACHE_HOME/less/history"
+      export CARGO_HOME="$XDG_DATA_HOME/cargo"
+      export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
+      export NODE_REPL_HISTORY="$XDG_DATA_HOME/node_repl_history"
+      export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
+      export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
+    marker: "# {mark} ANSIBLE MANAGED XDG BLOCK"
+
+- name: Create XDG directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ ansible_env.HOME }}/.config"
+    - "{{ ansible_env.HOME }}/.local/share"
+    - "{{ ansible_env.HOME }}/.cache"
+    - "{{ ansible_env.HOME }}/.local/state"
+    - "{{ ansible_env.HOME }}/.local/bin"
+    - "{{ ansible_env.HOME }}/.config/zsh"
+    - "{{ ansible_env.HOME }}/.config/vim"
+    - "{{ ansible_env.HOME }}/.local/state/zsh"
+    - "{{ ansible_env.HOME }}/.config/git"
+    - "{{ ansible_env.HOME }}/.config/npm"
+    - "{{ ansible_env.HOME }}/.cache/less"
+
+- name: Create vim autoload directory (XDG compliant)
+  file:
+    path: "{{ ansible_env.HOME }}/.config/vim/autoload"
+    state: directory
+    mode: '0755'

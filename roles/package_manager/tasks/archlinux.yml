@@ -1,0 +1,12 @@
+---
+- name: Update package cache (Arch)
+  pacman:
+    update_cache: yes
+  become: yes
+  when: package_update | default(true)
+
+- name: Upgrade packages (Arch) 
+  pacman:
+    upgrade: yes
+  become: yes
+  when: package_upgrade | default(false)

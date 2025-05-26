@@ -1,0 +1,153 @@
+---
+# Zsh installation and configuration with XDG compliance
+# Supports macOS, Ubuntu/Debian, and Arch Linux
+
+# Installation
+- name: Install zsh with homebrew (macOS)
+  homebrew:
+    name: zsh
+    state: present
+  when: ansible_os_family == "Darwin"
+
+# Fix broken /etc/zshenv on macOS which runs path_helper
+# We rename it to prevent unwanted reordering of $PATH
+# https://github.com/sorin-ionescu/prezto/issues/381
+# https://github.com/thoughtbot/dotfiles/pull/426#issue-109716011
+- name: Fix broken /etc/zshenv (macOS)
+  command: mv /etc/zshenv /etc/zprofile
+  args:
+    creates: /etc/zprofile
+  become: yes
+  when: ansible_os_family == "Darwin"
+
+- name: Install zsh with apt (Debian/Ubuntu)
+  apt:
+    name: zsh
+    state: present
+  become: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install zsh with pacman (Arch Linux)
+  pacman:
+    name: zsh
+    state: present
+  become: yes
+  when: ansible_os_family == "Archlinux"
+
+# XDG directories setup
+- name: Ensure XDG config directory exists
+  file:
+    path: "{{ xdg_config_home }}/zsh"
+    state: directory
+    mode: '0755'
+
+- name: Ensure XDG data directory exists
+  file:
+    path: "{{ xdg_data_home }}/zsh"
+    state: directory
+    mode: '0755'
+
+- name: Ensure XDG cache directory exists
+  file:
+    path: "{{ xdg_cache_home }}/zsh"
+    state: directory
+    mode: '0755'
+
+- name: Ensure XDG state directory exists
+  file:
+    path: "{{ xdg_state_home }}/zsh"
+    state: directory
+    mode: '0755'
+
+# Configuration
+- name: Check if legacy zshrc exists
+  stat:
+    path: "{{ ansible_env.HOME }}/.zshrc"
+  register: legacy_zshrc_stat
+  failed_when: false
+
+- name: Check if XDG zshrc exists
+  stat:
+    path: "{{ xdg_config_home }}/zsh/.zshrc"
+  register: xdg_zshrc_stat
+  failed_when: false
+
+- name: Backup legacy zshrc if it exists
+  command: mv "{{ ansible_env.HOME }}/.zshrc" "{{ ansible_env.HOME }}/.zshrc.bak"
+  args:
+    creates: "{{ ansible_env.HOME }}/.zshrc.bak"
+  when: legacy_zshrc_stat.stat.exists
+
+- name: Backup XDG zshrc if it exists and is not our symlink
+  command: mv "{{ xdg_config_home }}/zsh/.zshrc" "{{ xdg_config_home }}/zsh/.zshrc.bak"
+  args:
+    creates: "{{ xdg_config_home }}/zsh/.zshrc.bak"
+  when:
+    - xdg_zshrc_stat.stat.exists
+    - not xdg_zshrc_stat.stat.islnk
+
+# Ensure the dotfiles repository gets cloned on remote hosts
+- name: Clone dotfiles repository (remote hosts only)
+  git:
+    repo: "{{ dotfiles_repo_url }}"
+    dest: "{{ dotfiles_home }}"
+    clone: yes
+    update: yes
+  when: inventory_hostname != 'localhost'
+
+# Prezto setup (if enabled)
+- name: Setup Prezto
+  include_tasks: prezto.yml
+  when: zsh_prezto | default(true) | bool
+
+# Minimal zsh setup (if Prezto is disabled)
+- name: Copy minimal zshrc
+  copy:
+    src: zshrc_minimal
+    dest: "{{ xdg_config_home }}/zsh/.zshrc"
+    mode: '0644'
+  when: not (zsh_prezto | default(true) | bool)
+
+# Create legacy symlink for backwards compatibility
+- name: Create legacy zshrc symlink pointing to XDG location
+  file:
+    src: "{{ xdg_config_home }}/zsh/.zshrc"
+    dest: "{{ ansible_env.HOME }}/.zshrc"
+    state: link
+    force: yes
+
+# Set ZDOTDIR environment variable for XDG compliance
+- name: Set ZDOTDIR in /etc/zsh/zshenv (system-wide)
+  lineinfile:
+    path: /etc/zsh/zshenv
+    line: 'export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"'
+    create: yes
+    mode: '0644'
+  become: yes
+  when: ansible_os_family != "Darwin"
+
+- name: Set ZDOTDIR in /etc/zshenv (macOS)
+  lineinfile:
+    path: /etc/zshenv
+    line: 'export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"'
+    create: yes
+    mode: '0644'
+  become: yes
+  when: ansible_os_family == "Darwin"
+
+# Set zsh as default shell
+- name: Get current user shell
+  command: echo $SHELL
+  register: current_shell
+  changed_when: false
+
+- name: Set zsh as default shell
+  user:
+    name: "{{ ansible_user_id }}"
+    shell: "{{ zsh_path }}"
+  become: yes
+  when: 
+    - set_zsh_as_default | default(true) | bool
+    - current_shell.stdout != zsh_path
+  vars:
+    zsh_path: "{{ '/opt/homebrew/bin/zsh' if ansible_os_family == 'Darwin' else '/usr/bin/zsh' }}"

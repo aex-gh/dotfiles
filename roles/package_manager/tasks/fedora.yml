@@ -1,0 +1,13 @@
+---
+- name: Update package cache (Fedora)
+  dnf:
+    update_cache: yes
+  become: yes
+  when: package_update | default(true)
+
+- name: Upgrade packages (Fedora)
+  dnf:
+    name: "*"
+    state: latest
+  become: yes
+  when: package_upgrade | default(false)

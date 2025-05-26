@@ -1,0 +1,112 @@
+# group_vars/all.yml - Cross-platform development environment configuration
+
+# Supported platforms (covering ~95% of development use cases)
+supported_platforms:
+  primary:
+    - Darwin      # macOS - Premium development experience
+    - Ubuntu      # Most popular Linux desktop distro
+  
+  secondary:
+    - Debian      # Ubuntu's stable foundation
+    - Fedora      # Red Hat's desktop/development platform
+    - Archlinux   # Bleeding-edge, customizable
+
+# Why these platforms?
+platform_rationale:
+  Darwin: "Primary target - excellent development experience"
+  Ubuntu: "Most popular Linux desktop, great hardware support, WSL default"
+  Debian: "Rock-solid foundation, excellent package management"
+  Fedora: "Latest packages, developer-focused, corporate backing"
+  Archlinux: "Rolling release, AUR, advanced users"
+
+# Package mappings by platform
+dev_packages:
+  Darwin:
+    package_manager: homebrew
+    git: git
+    vim: vim
+    zsh: zsh
+    ripgrep: ripgrep
+    fd: fd
+    bat: bat
+    eza: eza
+    fzf: fzf
+    
+  Ubuntu:
+    package_manager: apt
+    git: git
+    vim: vim
+    zsh: zsh
+    ripgrep: ripgrep
+    fd: fd-find
+    bat: bat
+    eza: null  # Need special install
+    fzf: fzf
+    build_tools: build-essential
+    
+  Debian:
+    package_manager: apt
+    git: git
+    vim: vim
+    zsh: zsh
+    ripgrep: ripgrep
+    fd: fd-find
+    bat: bat
+    eza: null  # Need special install
+    fzf: fzf
+    build_tools: build-essential
+    
+  Fedora:
+    package_manager: dnf
+    git: git
+    vim: vim
+    zsh: zsh
+    ripgrep: ripgrep
+    fd: fd-find
+    bat: bat
+    eza: eza  # Available in Fedora repos
+    fzf: fzf
+    build_tools: "@Development Tools"
+    
+  Archlinux:
+    package_manager: pacman
+    git: git
+    vim: vim
+    zsh: zsh
+    ripgrep: ripgrep
+    fd: fd
+    bat: bat
+    eza: eza
+    fzf: fzf
+    build_tools: base-devel
+
+# Special installation requirements
+special_installs:
+  eza:
+    Ubuntu:
+      method: manual
+      reason: "Not in standard repos for older versions"
+      install_cmd: |
+        wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+        sudo apt update && sudo apt install eza
+        
+    Debian:
+      method: cargo
+      reason: "Not in standard repos"
+      install_cmd: "cargo install eza"
+      
+  mise:
+    Ubuntu: "curl https://mise.run | sh"
+    Debian: "curl https://mise.run | sh"
+    Fedora: "curl https://mise.run | sh"  # Not in repos yet
+    Archlinux: "yay -S mise-bin"
+    Darwin: "brew install mise"
+
+# XDG Base Directory compliance
+xdg_compliance:
+  enabled: true
+  config_home: "${XDG_CONFIG_HOME:-$HOME/.config}"
+  data_home: "${XDG_DATA_HOME:-$HOME/.local/share}"
+  cache_home: "${XDG_CACHE_HOME:-$HOME/.cache}"
+  state_home: "${XDG_STATE_HOME:-$HOME/.local/state}"

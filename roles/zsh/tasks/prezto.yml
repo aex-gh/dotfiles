@@ -1,0 +1,29 @@
+---
+# Prezto installation and configuration with XDG compliance
+
+- name: Check if Prezto is already installed
+  stat:
+    path: "{{ xdg_config_home }}/zsh/.zprezto"
+  register: prezto_stat
+
+- name: Install Prezto
+  script: install_prezto.sh
+  args:
+    creates: "{{ xdg_config_home }}/zsh/.zprezto"
+  environment:
+    ZDOTDIR: "{{ xdg_config_home }}/zsh"
+  when: not prezto_stat.stat.exists
+
+- name: Symlink zpreztorc file to XDG config location
+  file:
+    src: "{{ dotfiles_home }}/roles/zsh/files/zpreztorc.link"
+    dest: "{{ xdg_config_home }}/zsh/.zpreztorc"
+    state: link
+    force: yes
+
+- name: Symlink zshrc file to XDG config location
+  file:
+    src: "{{ dotfiles_home }}/roles/zsh/files/zshrc.link"
+    dest: "{{ xdg_config_home }}/zsh/.zshrc"
+    state: link
+    force: yes

@@ -1,0 +1,20 @@
+---
+# Handle tools that need special installation methods
+- name: Install mise (cross-platform development tool version manager)
+  block:
+    - name: Install mise via homebrew (macOS)
+      homebrew:
+        name: mise
+        state: present
+      when: ansible_os_family == "Darwin"
+      
+    - name: Install mise via AUR (Arch)
+      shell: yay -S --noconfirm mise-bin
+      when: ansible_distribution == "Archlinux"
+      ignore_errors: yes
+      
+    - name: Install mise via script (Ubuntu/Debian/Fedora)
+      shell: curl https://mise.run | sh
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/bin/mise"
+      when: ansible_distribution in ["Ubuntu", "Debian", "Fedora"]

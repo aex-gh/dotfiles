@@ -1,0 +1,3 @@
+package_update: yes
+package_upgrade: no  # Set to yes if you want automatic upgrades
+gui_environment: false  # Set to true for desktop Linux environments

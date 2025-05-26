@@ -1,0 +1,12 @@
+---
+- name: Install development tools (macOS)
+  homebrew:
+    name:
+      - git
+      - vim
+      - ripgrep
+      - fd
+      - bat
+      - eza
+      - fzf
+    state: present

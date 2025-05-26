@@ -1,0 +1,54 @@
+---
+# Cross-platform Rust installation with XDG compliance
+- name: Set XDG-compliant Rust directories
+  set_fact:
+    cargo_home: "{{ ansible_env.XDG_DATA_HOME | default(ansible_env.HOME + '/.local/share') }}/cargo"
+    rustup_home: "{{ ansible_env.XDG_DATA_HOME | default(ansible_env.HOME + '/.local/share') }}/rustup"
+
+- name: Create XDG-compliant Rust directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ cargo_home }}"
+    - "{{ rustup_home }}"
+
+- name: Check if Rust is already installed (XDG location)
+  stat:
+    path: "{{ cargo_home }}/bin/rustc"
+  register: rust_xdg_installed
+
+- name: Check if Rust is already installed (legacy location)
+  stat:
+    path: "{{ ansible_env.HOME }}/.cargo/bin/rustc"
+  register: rust_legacy_installed
+
+- name: Install Rust via rustup (XDG-compliant)
+  shell: |
+    export CARGO_HOME="{{ cargo_home }}"
+    export RUSTUP_HOME="{{ rustup_home }}"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+  when: not rust_xdg_installed.stat.exists and not rust_legacy_installed.stat.exists
+
+- name: Migrate existing Rust installation to XDG location
+  block:
+    - name: Move .cargo to XDG location
+      command: mv "{{ ansible_env.HOME }}/.cargo" "{{ cargo_home }}"
+      when: rust_legacy_installed.stat.exists
+      
+    - name: Move .rustup to XDG location  
+      command: mv "{{ ansible_env.HOME }}/.rustup" "{{ rustup_home }}"
+      args:
+        creates: "{{ rustup_home }}"
+      when: rust_legacy_installed.stat.exists
+      ignore_errors: yes  # .rustup might not exist in some installations
+      
+  when: rust_legacy_installed.stat.exists and not rust_xdg_installed.stat.exists
+
+- name: Update Rust toolchain
+  shell: |
+    export CARGO_HOME="{{ cargo_home }}"
+    export RUSTUP_HOME="{{ rustup_home }}"
+    "{{ cargo_home }}/bin/rustup" update
+  when: rust_xdg_installed.stat.exists or rust_legacy_installed.stat.exists

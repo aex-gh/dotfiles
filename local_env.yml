@@ -1,0 +1,26 @@
+# Cross-platform environment playbooks
+---
+- name: Set up local development environment
+  hosts: local
+  roles:
+    # Core system setup
+    - { role: xdg, tags: ["xdg", "bootstrap"] }
+    - { role: package_manager, tags: ["package_manager", "bootstrap"] }
+    - { role: fonts, tags: ["fonts", "bootstrap"] }
+    
+    # Modern CLI tools
+    - { role: modern_tools, tags: ["modern_tools", "bootstrap"] }
+    
+    # Shell and core tools  
+    - { role: zsh, tags: ["zsh", "bootstrap"] }
+    - { role: git, tags: ["git"] }
+    
+    # Development environments
+    - { role: python, tags: ["python"] }
+    - { role: mise, tags: ["mise"] }
+    - { role: rust, tags: ["rust"] }
+    - { role: vim, tags: ["vim"] }
+    
+    # Platform-specific roles
+    - { role: macos, tags: ["macos"], when: ansible_os_family == "Darwin" }
+    - { role: linux_desktop, tags: ["desktop"], when: gui_environment | default(false) and ansible_os_family != "Darwin" }

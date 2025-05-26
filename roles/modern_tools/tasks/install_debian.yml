@@ -1,0 +1,27 @@
+---
+- name: Install development tools (Debian)
+  apt:
+    name:
+      - git
+      - vim
+      - zsh
+      - build-essential
+      - curl
+      - wget
+      - ripgrep
+      - fd-find
+      - bat
+      - fzf
+    state: present
+  become: yes
+  ignore_errors: yes
+
+- name: Install rust for cargo installations
+  shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  args:
+    creates: "{{ ansible_env.HOME }}/.cargo/bin/cargo"
+
+- name: Install eza via cargo (Debian)
+  shell: "{{ ansible_env.HOME }}/.cargo/bin/cargo install eza"
+  args:
+    creates: "{{ ansible_env.HOME }}/.cargo/bin/eza"
