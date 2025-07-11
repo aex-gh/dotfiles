@@ -1,0 +1,10 @@
+# Personal Homebrew Bundle
+# Maintained packages for ongoing use
+# Run: brew bundle --file=~/.Brewfile
+
+#=============================================================================
+# PERSONAL PACKAGES
+#=============================================================================
+
+# Note: Core packages are installed during bootstrap
+# This file is for personal additions and maintenance

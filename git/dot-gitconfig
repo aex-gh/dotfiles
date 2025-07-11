@@ -1,0 +1,21 @@
+[user]
+	name = Andrew Exley
+	email = jm@exley.id.com
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFfmgUOy6UeVYTfC1RTVrrn+8TvdQobo3uHOtn2KlQAE
+
+[init]
+	defaultBranch = main
+
+[gpg]
+  format = ssh
+
+[gpg "ssh"]
+  program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+
+[commit]
+  gpgsign = true
+
+[includeIf "gitdir:~/projects/lument"]
+  path = ~/projects/lument/.gitconfig
+[credential]
+	helper = 
